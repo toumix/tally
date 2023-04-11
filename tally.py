@@ -38,7 +38,7 @@ class Composition:
         for i, (G, p) in enumerate([term.to_graph() for term in self.terms]):
             for v, (x, y) in p.items():
                 if isinstance(self, Horizontal):
-                    position[v + len(graph)] = (x, (i + y) / n_terms)
+                    position[v + len(graph)] = (x, 1 - (i + y) / n_terms)
                 else:
                     position[v + len(graph)] = ((i + x) / n_terms, y)
             graph = nx.disjoint_union(graph, G)
