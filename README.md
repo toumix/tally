@@ -10,4 +10,10 @@ composition = H(e, e, e) | e & (e | e & e)
 composition.draw()
 ```
 
-![composition](example.png)
+![composition](docs/_static/example.png)
+
+```python
+composition.to_diagram().draw()
+```
+
+![composition](docs/_static/diagram.png)

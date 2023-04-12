@@ -1,10 +1,28 @@
-""" Tally wtf is a tool for the quantum-enhanced composition of generative art. """
+""" Tally is a tool for the quantum-enhanced composition of generative art. """
 
 from __future__ import annotations
 from dataclasses import dataclass
+from typing import NamedTuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
+from discopy.monoidal import PRO
+from discopy.cartesian import Box, Diagram
+
+
+Diagram.ty_factory = PRO
+
+
+class PlaneGraph(NamedTuple):
+    """
+    A plane graph is a graph with a mapping from nodes to planar coordinates.
+    """
+    graph: nx.Graph
+    position: dict[int, tuple[float, float]]
+
+
+PlaneGraph.position.__doc__ = "The mapping from nodes to planar coordinates."
+PlaneGraph.graph.__doc__ = "The graph."
 
 
 @dataclass
@@ -12,13 +30,12 @@ class Composition:
     """
     A composition is a list of terms, which are themselves compositions.
 
-    Compositions are either empty, :class:`Horizontal` or  :class:`Vertical`.
-
     Parameters:
         terms : The terms of the composition.
 
     Note
     ----
+    Compositions are either empty, :class:`Horizontal` or  :class:`Vertical`.
     The composition ``e`` with an empty list of terms is drawn as just a frame.
     The operator ``&`` does binary :class:`Horizontal` composition while ``|``
     does binary :class:`Vertical` composition, shortened to ``H`` and ``V``.
@@ -44,12 +61,28 @@ class Composition:
             return result if isinstance(self, Horizontal) else f"({result})"
         return f"{'H' if isinstance(self, Horizontal) else 'V'}{self.terms}"
 
-    def to_graph(self) -> tuple[nx.Graph, dict[int, tuple[float, float]]]:
+    def to_diagram(self) -> Diagram:
         """
-        Returns
+        Encode a composition as a DisCoPy diagram.
+
+        Example
         -------
-            graph : A graph with edges for each stroke.
-            position : A mapping from nodes to positions in the unit square.
+        >>> composition = H(e, e, e) | e & (e | e & e)
+        >>> composition.to_diagram().draw(path="docs/_static/diagram.png")
+
+        .. image:: /_static/diagram.png
+            :center:
+        """
+        if not self.terms:
+            return Diagram.id(1)
+        name = 'H' if isinstance(self, Horizontal) else 'V'
+        return Box(name, len(self.terms), 1) << Diagram.id().tensor(*(
+            term.to_diagram() for term in self.terms))
+
+
+    def to_graph(self) -> PlaneGraph:
+        """
+        Compile a composition as a graph with positions in the unit square.
         """
         if not self.terms:
             graph = nx.Graph(zip(range(4), [1, 2, 3, 0]))
