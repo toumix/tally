@@ -5,7 +5,7 @@ Tally is a tool for the quantum-enhanced composition of generative art.
 ```python
 from tally import H, V, e
 
-composition = H(e, e, e) | e & (e | e & e)
+composition = V(e, e, e) | e & H(e, e & e)
 
 composition.draw()
 ```
