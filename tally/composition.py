@@ -13,7 +13,7 @@ from tally.plot import to_graph, plot
 Diagram.ty_factory = PRO
 
 
-@dataclass
+@dataclass(frozen=True)
 class Composition:
     """
     A composition is a list of terms, which are themselves compositions.
@@ -31,7 +31,7 @@ class Composition:
     terms: tuple[Composition, ...]
 
     def __init__(self, *terms: Composition):
-        self.terms = terms
+        object.__setattr__(self, "terms", terms)
         assert not self.terms or type(self) in [Horizontal, Vertical]
 
     def __or__(self, other):
