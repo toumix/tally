@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import random
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from discopy.monoidal import PRO
 from discopy.markov import Box, Diagram
@@ -25,7 +25,11 @@ from tally.draw import to_graph, draw
 
 Diagram.ty_factory = PRO
 
-Label = Enum('Label', ['Horizontal', 'Vertical', 'Empty'])
+class Label(str, Enum):
+    Horizontal = 'H'
+    Vertical = 'V'
+    Empty = 'e'
+
 Horizontal, Vertical, Empty = Label
 
 Label.__call__ = lambda self, *terms: Composition(*terms, label=self)
@@ -82,7 +86,7 @@ class Composition:
 
     def __init__(self, *terms: Composition, label: Label = Empty):
         assert (terms and label in [Horizontal, Vertical]
-                or not terms and label is Empty)
+                or not terms and label == Empty)
         labels = set(t.label for t in terms)
         lengths = set(len(t.terms) for t in terms)
         if len(labels) == len(lengths) == 1:
@@ -105,11 +109,11 @@ class Composition:
 
     def __repr__(self):
         if not self.terms:
-            return "e"
+            return self.label.value
         if len(self.terms) == 2:
-            symbol = '|' if self.label is Horizontal else '&'
+            symbol = '|' if self.label == Horizontal else '&'
             return f"({self.terms[0]} {symbol} {self.terms[1]})"
-        return f"{'H' if self.label is Horizontal else 'V'}{self.terms}"
+        return f"{self.label.value}{self.terms}"
 
     @property
     def depth(self):
@@ -129,17 +133,21 @@ class Composition:
         """
         if not self.terms:
             return Diagram.id(1)
-        name = 'H' if self.label is Horizontal else 'V'
-        return Box(name, len(self.terms), 1) << Diagram.id().tensor(*(
-            term.to_diagram() for term in self.terms))
+        return Box(self.label.value, len(self.terms), 1)\
+            << Diagram.id().tensor(*(term.to_diagram() for term in self.terms))
 
-    def to_dict(self):
-        return {'label': 'e'} if not self.terms else {
-            'label': 'H' if self.label is Horizontal else 'V',
-            'terms': [t.to_dict() for t in self.terms]}
+    def save(self, path):
+        with open(path, "w+") as file:
+            file.write(json.dumps(asdict(self)))
 
-    def to_json(self):
-        return json.dumps(self.to_dict())
+    @staticmethod
+    def load(path):
+        with open(path, "r") as file:
+            return Composition.from_dict(json.loads(file.read()))
+
+    @staticmethod
+    def from_dict(tree):
+        return Label(tree['label'])(*map(Composition.from_dict, tree['terms']))
 
     @staticmethod
     def random(seed=None, min_depth=2, max_depth=4, prob_empty=.25):
