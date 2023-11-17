@@ -41,10 +41,10 @@ def to_graph(composition: Composition) -> PlaneGraph:
     return graph, position
 
 
-def plot(composition: Composition,
+def draw(composition: Composition,
          path: Optional[str] = None, figsize=(5, 5)) -> None:
     """
-    Plot a composition with matplotlib.
+    Draw a composition with matplotlib.
 
     Parameters:
         path : Optional file path, if ``None`` then call ``plt.show()``.
@@ -53,7 +53,7 @@ def plot(composition: Composition,
     Example
     -------
     >>> composition = V(e, e, e) | e & H(e, e & e)
-    >>> composition.plot(path="docs/_static/example.png")
+    >>> composition.draw(path="docs/_static/example.png")
 
     .. image:: /_static/example.png
         :align: center
