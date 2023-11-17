@@ -1,13 +1,10 @@
 """ Functor from :class:`Composition` to parameterised quantum circuits. """
 
-from numpy.random import rand
-from pytket.extensions.qiskit import AerBackend
+import numpy as np
 
 from discopy.monoidal import PRO
 from discopy.markov import Diagram, Box, Functor, Category
 from discopy.quantum import qubit, Ty, Circuit, Discard, Bra, IQPansatz
-
-Diagram.ty_factory = PRO
 
 MAX_ARITY = 3
 WIDTH, DEPTH = 1, 3
@@ -18,8 +15,8 @@ def ansatz(params):
     return IQPansatz(n_qubits, params)\
         >> Discard(left) @ qubit ** WIDTH @ Discard(right)
 
-boxes = [Box(label, arity, 1)
-         for label in "HV" for arity in range(2, MAX_ARITY)]
+boxes = [Box(label, PRO(arity), PRO(1))
+         for label in "HV" for arity in range(2, MAX_ARITY + 1)]
 param_shapes = {box: (DEPTH, len(box.dom) * WIDTH - 1) for box in boxes}
 n_params = sum(i * j for i, j in param_shapes.values())
 
@@ -27,6 +24,7 @@ def flatten(box_to_params):
     return np.concatenate([box_to_params[box].flatten() for box in boxes])
 
 def unflatten(params):
+    params = np.array(params)
     box_to_params, scan = {}, 0
     for box in boxes:
         i, j = param_shapes[box]

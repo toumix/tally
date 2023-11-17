@@ -40,8 +40,8 @@ class Composition:
     A composition is a list of terms, which are themselves compositions.
 
     Parameters:
-        label : Either `Horizontal`, `Vertical` or `Empty`.
         terms : The terms of the composition.
+        label : Either `Horizontal`, `Vertical` or `Empty`.
 
     Note
     ----

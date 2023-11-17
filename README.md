@@ -19,3 +19,12 @@ composition.to_diagram().draw()
 ```
 
 ![composition](docs/_static/diagram.png)
+
+```python
+from tally import functor, n_params
+
+F = functor(n_params * [0])
+F(composition.to_diagram()).draw()
+```
+
+![composition](docs/_static/circuit.png)
