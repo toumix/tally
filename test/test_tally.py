@@ -5,11 +5,11 @@ from tally import H, V, e
 
 def test_repr():
     composition = H(e, e, e) | e & (e | e & e)
-    assert repr(composition) == "(H(e, e, e) | e & (e | e & e))"
+    assert repr(composition) == "(H(e, e, e) | (e & (e | (e & e))))"
 
 
 def test_draw(true_path="docs/_static/example.png", tol=10):
-    composition = H(e, e, e) | e & (e | e & e)
+    composition = V(e, e, e) | e & H(e, e & e)
     folder, filename = os.path.split(true_path)
     test_path = os.path.join(folder, "." + filename)
     composition.draw(path=test_path)

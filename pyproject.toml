@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel", "setuptools_scm[toml]>=3.4"]
+
+[project]
+dynamic = ["version"]
+name = "tally"
+description = "A tool for the quantum-enhanced composition of generative art."
+readme = "README.md"
+requires-python = ">=3.9"
+license =  {file = "LICENSE"}
+keywords = [
+    "generative art",
+    "category theory",
+    "string diagrams",
+    "natural language processing",
+    "quantum computing"
+]
+authors = [
+  {name = "Alexis Toumi"},
+  {email = "alexis@toumi.email"}
+]
+dependencies = [
+  "numpy >= 1.18.1",
+  "discopy>=1.1.3",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+]
+docs  = [
+  "sphinx",
+  "pydata-sphinx-theme",
+]
+
+[project.urls]
+Homepage = "https://quantumtally.art/"
+Repository = "https://github.com/toumix/tally"
+
+[tool.setuptools]
+packages = [
+    "tally"]
+
+[tool.setuptools_scm]
+write_to = "tally/version.py"
+
+[tool.flake8]
+extend-ignore = [
+    "E731",
+    "E741",
+    "E743",
+    "F811",
+]
+per-file-ignores = [
+    "__init__.py:F401"
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "."
+]
+testpaths = [
+    "tally",
+    "test/*.py",
+]
+addopts = "--doctest-modules"

@@ -1,5 +1,0 @@
-networkx>=2.4
-matplotlib>=3.1.2
-sphinx
-pydata-sphinx-theme
-discopy>=1.1.3

@@ -33,7 +33,7 @@ def to_graph(composition: Composition) -> PlaneGraph:
     graph, position, n_terms = nx.Graph(), dict(), len(composition.terms)
     for i, (G, p) in enumerate([term.to_graph() for term in composition.terms]):
         for v, (x, y) in p.items():
-            if isinstance(composition, Horizontal):
+            if composition.label is Horizontal:
                 position[v + len(graph)] = ((i + x) / n_terms, y)
             else:
                 position[v + len(graph)] = (x, 1 - (i + y) / n_terms)
@@ -49,14 +49,6 @@ def draw(composition: Composition,
     Parameters:
         path : Optional file path, if ``None`` then call ``plt.show()``.
         figsize : Passed to ``plt.figure``.
-
-    Example
-    -------
-    >>> composition = V(e, e, e) | e & H(e, e & e)
-    >>> composition.draw(path="docs/_static/example.png")
-
-    .. image:: /_static/example.png
-        :align: center
     """
     plt.figure(figsize=figsize)
     graph, position = to_graph(composition)
