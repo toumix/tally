@@ -1,55 +1,49 @@
-# """ Functor from :class:`Composition` to parameterised quantum circuits. """
+""" Functor from :class:`Composition` to parameterised quantum circuits. """
 
-# from numpy.random import rand, seed; seed(42)
+from numpy.random import rand
+from pytket.extensions.qiskit import AerBackend
 
-# from discopy.monoidal import PRO
-# from discopy.markov import Box, Functor, Category
-# from discopy.quantum import (
-#     qubit, Ty, Circuit, Discard, Measure, IQPansatz, Bits)
+from discopy.monoidal import PRO
+from discopy.markov import Diagram, Box, Functor, Category
+from discopy.quantum import qubit, Ty, Circuit, Discard, Bra, IQPansatz
 
-# DEPTH = 1
+Diagram.ty_factory = PRO
 
-# def ansatz(n_qubits, params):
-#     return IQPansatz(n_qubits, params)\
-#         >> Discard((n_qubits - 1) // 2) @ qubit @ Discard(n_qubits // 2)
+MAX_ARITY = 3
+WIDTH, DEPTH = 1, 3
 
-# params0 = rand(6)
+def ansatz(params):
+    n_qubits = params.shape[1] + 1
+    left, right = (n_qubits - WIDTH) // 2, (n_qubits - WIDTH + 1) // 2
+    return IQPansatz(n_qubits, params)\
+        >> Discard(left) @ qubit ** WIDTH @ Discard(right)
 
-# F = lambda params: Functor(
-#     ob={PRO(1): qubit},
-#     ar={Box('H', 3, 1): ansatz(3, params[0:2].reshape(1, 2)),
-#         Box('V', 3, 1): ansatz(3, params[2:4].reshape(1, 2)),
-#         Box('H', 2, 1): ansatz(2, params[4:5].reshape(1, 1)),
-#         Box('V', 2, 1): ansatz(2, params[5:6].reshape(1, 1))},
-#     cod=Category(Ty, Circuit))
+boxes = [Box(label, arity, 1)
+         for label in "HV" for arity in range(2, MAX_ARITY)]
+param_shapes = {box: (DEPTH, len(box.dom) * WIDTH - 1) for box in boxes}
+n_params = sum(i * j for i, j in param_shapes.values())
 
-# F0 = F(params0)
+def flatten(box_to_params):
+    return np.concatenate([box_to_params[box].flatten() for box in boxes])
 
-# circuit = F0(diagram) >> Measure() >> Bits(0)[::-1]
-# backend = AerBackend()
+def unflatten(params):
+    box_to_params, scan = {}, 0
+    for box in boxes:
+        i, j = param_shapes[box]
+        box_to_params[box] = params[scan:][:i * j].reshape(i, j)
+        scan += i * j
+    return box_to_params
 
-# evaluate = lambda F, composition: float((
-#     F(composition.to_diagram()) >> Measure() >> Bits(0)[::-1]).eval(
-#         backend=backend, compilation=backend.default_compilation_pass()))
+def functor(params):
+    box_to_params = unflatten(params)
+    return Functor(
+        ob={PRO(1): qubit ** WIDTH},
+        ar={box: ansatz(box_to_params[box]) for box in boxes},
+        cod=Category(Ty, Circuit))
 
-# evaluate(F0, composition)
-# from time import time
-# import numpy as np
-# import noisyopt
-
-# i, start, losses = 0, time(), []
-
-# def callback(params):
-#     global i
-#     i += 1
-#     losses.append(loss(params))
-#     print("Step {}: {}".format(i, params))
-
-# def loss(params):
-#     return np.mean(np.array([
-#         (value - evaluate(F(params), composition)) ** 2
-#         for composition, value in data.items()]))
-
-# experiment = noisyopt.minimizeSPSA(
-#     loss, params0, paired=False, callback=callback, niter=21)
-# experiment
+def evaluate(F, composition, backend=None, compilation=None):
+    if compilation is None:
+        compilation = None if backend is None\
+            else backend.default_compilation_pass()
+    circuit = F(composition.to_diagram()) >> Bra(*WIDTH * [0])
+    return float(circuit.eval(backend=backend, compilation=compilation))

@@ -119,6 +119,10 @@ class Composition:
     def depth(self):
         return max([0] + [t.depth + 1 for t in self.terms])
 
+    @property
+    def max_arity(self):
+        return max([len(self.terms)] + [t.max_arity for t in self.terms])
+
     def to_diagram(self) -> Diagram:
         """
         Encode a composition as a DisCoPy diagram.
@@ -150,20 +154,42 @@ class Composition:
         return Label(tree['label'])(*map(Composition.from_dict, tree['terms']))
 
     @staticmethod
-    def random(seed=None, min_depth=2, max_depth=4, prob_empty=.25):
+    def random(seed=None, max_trials=10, prob_empty=.25,
+               min_depth=2, max_depth=4, max_arity=3):
+        """
+        Generate a random composition.
+
+        Parameters:
+            seed : Random seed.
+            max_trials : Raise if too many failures.
+            prob_empty : Probability of generating an empty composition.
+            min_depth : Minimum depth of a composition.
+            max_depth : Maximum depth of a composition.
+            max_arity : Maximum number of terms at each level.
+
+        Example
+        -------
+        >>> Composition.random(seed=42).draw(path="docs/_static/random.png")
+
+        .. image:: /_static/random.png
+            :center:
+        """
         if seed is not None:
             random.seed(seed)
         if not max_depth or not min_depth and random.random() <= prob_empty:
             return Composition()
-        while True:
-            cls, n_terms = map(random.choice, ([Horizontal, Vertical], [2, 3]))
+        for trial in range(max_trials):
+            cls, n_terms = map(random.choice, (
+                [Horizontal, Vertical], range(2, max_arity)))
             result = cls(*[Composition.random(
-                    seed=None if seed is None else seed + i,
+                    seed=None if seed is None else hash((seed, i, trial)),
                     min_depth=None,
                     max_depth=max_depth - 1,
                     prob_empty=prob_empty) for i in range(n_terms)])
-            if min_depth is None or result.depth >= min_depth:
-                return result
+            if result.max_arity > max_arity or result.depth < (min_depth or 0):
+                continue
+            return result
+        raise RuntimeError
 
 
 Composition.to_graph, Composition.draw = to_graph, draw
